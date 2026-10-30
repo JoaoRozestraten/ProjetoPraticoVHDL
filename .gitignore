@@ -1,0 +1,65 @@
+
+# =====================================
+# VHDL - Git Ignore
+# =====================================
+
+# GHDL
+work-obj*.cf
+*.ghw
+*.vcd
+*.fst
+
+# ModelSim / QuestaSim
+work/
+transcript
+vsim.wlf
+*.wlf
+*.vstf
+modelsim.ini
+
+# Xilinx Vivado
+.Xil/
+*.jou
+*.log
+*.str
+*.pb
+*.wdb
+*.wcfg
+*.vdi
+*.cache/
+*.runs/
+*.sim/
+*.hw/
+*.ip_user_files/
+
+# Intel Quartus
+db/
+incremental_db/
+output_files/
+simulation/
+*.qws
+*.rpt
+*.smsg
+*.summary
+*.sof
+*.pof
+*.jic
+*.rbf
+
+# Arquivos temporários
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/
+.idea/
+
+# Python (scripts auxiliares)
+__pycache__/
+*.pyc
+.venv/
