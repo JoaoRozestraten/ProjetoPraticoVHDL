@@ -14,8 +14,11 @@ entity Mem is
 end entity Mem;
 
 architecture Behaviour of Mem is
-        type ram_type is array (0 to (2**8) - 1) of STD_LOGIC_VECTOR(15 downto 0);
-        signal mem_array        : ram_type;
+        type ram_type is array (0 to 4095) of std_logic_vector(15 downto 0);
+        signal mem_array : ram_type;
+
+        attribute ram_init_file : string;
+        attribute ram_init_file of mem_array : signal is "program.mif";
 
 begin
         process(clk)
