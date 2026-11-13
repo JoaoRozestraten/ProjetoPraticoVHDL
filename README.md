@@ -46,7 +46,6 @@ O **ProjetoPraticoVHDL** é uma **CPU multiciclo de 16 bits** escrita em VHDL pa
 
 - [Project Overview](#project-overview)
 - [Architecture](#architecture)
-- [C4 Model Architecture](#c4-model-architecture)
 - [Repository Structure](#repository-structure)
 - [Dependencies and Integration](#dependencies-and-integration)
 - [Component Interfaces](#component-interfaces)
@@ -209,56 +208,6 @@ stateDiagram-v2
 
 ---
 
-## C4 Model Architecture
-
-<details>
-<summary><b>Nível 1 — Contexto</b></summary>
-
-```mermaid
-flowchart TB
-    G(["👤 Grupo<br/><i>escreve o VHDL e os programas</i>"])
-    P(["👤 Professor<br/><i>avalia a apresentação</i>"])
-    CPU["🖥️ CPU de 16 bits<br/><i>na FPGA</i>"]
-    MIF[["📄 Programa .mif"]]
-    PLACA[("🎛️ Placa<br/>botão · SW17 · HEX · LEDs")]
-
-    G -- "compila e grava pelo Quartus" --> CPU
-    MIF -- "inicializa a memória" --> CPU
-    P -- "aperta o clock e lê os displays" --> PLACA
-    PLACA <--> CPU
-```
-
-</details>
-
-<details>
-<summary><b>Nível 2 — Contêineres</b></summary>
-
-```mermaid
-flowchart LR
-    BTN(["🖱️ Botão"])
-    SW(["🎚️ SW17"])
-    subgraph TOPO["Entidade de topo"]
-        DEB["Debouncer"]
-        CPU["CPU multiciclo<br/>PC · Memória · Registradores · ULA · Controle"]
-        MUX{{"ULA / RDM"}}
-        SEG["Decodificadores<br/>de sete segmentos"]
-    end
-    HEX03[("HEX0–3<br/>PC")]
-    HEX47[("HEX4–7<br/>ULA ou RDM")]
-    LED[("LEDG<br/>estado")]
-
-    BTN --> DEB -- "clk" --> CPU
-    CPU -- "PC" --> SEG --> HEX03
-    CPU -- "ULAOut · RDM" --> MUX --> SEG
-    SW --> MUX
-    SEG --> HEX47
-    CPU -- "estado" --> LED
-```
-
-</details>
-
----
-
 ## Repository Structure
 
 ```text
@@ -368,19 +317,6 @@ Cada `.mif` exercita um grupo de instruções e tem um resultado esperado conhec
 | ⏱️ | **Tratamento de hazards** (sem forwarding, sem stall, sem previsão de desvio) | A CPU é multiciclo, não tem pipeline: cada instrução termina antes de a próxima começar | Nada a tratar: uma instrução sempre vê os resultados da anterior |
 | ➕ | **Exceção de overflow** | O enunciado não pede, e a ULA trabalha em complemento de dois de 16 bits | O resultado dá a volta (ex.: `0x7FFF + 1 = 0x8000`) e nenhuma flag é ligada |
 | ❓ | **Exceção de opcode inválido** | Só as 11 instruções do enunciado são definidas | O opcode não reconhecido não é detectado nem gera interrupção |
-
-
----
-
-## Additional Documentation
-
-| Documento | Do que trata |
-|---|---|
-| **Especificação** (`.pdf`, na entrega) | Topologia, registradores, formatos, unidade de controle (diagrama, tabela de estados e sinais), caminho de dados, testes, resultados, dificuldades e uso de IA |
-| **Código VHDL** (`.vhd`) | Todos os componentes e a entidade de topo |
-| **Programas de teste** (`.mif`) | Os programas carregados na memória durante os testes |
-
-📅 **Entrega:** 27/11/2026, 9h30, no Canvas · **Apresentações:** 27/11 · 04/12 · 11/12 (ordem sorteada; todos os integrantes presentes)
 
 ---
 
