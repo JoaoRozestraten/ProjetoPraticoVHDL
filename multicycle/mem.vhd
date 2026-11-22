@@ -26,7 +26,7 @@ begin
                         if memWrite = '1' then
                                 mem_array(to_integer(unsigned(address))) <= writeData;
                         end if;
-
+                elsif falling_edge(clk) then
                         if memRead = '1' then
                                 MemData <= mem_array(to_integer(unsigned(address)));
                         end if;
