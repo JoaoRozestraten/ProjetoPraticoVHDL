@@ -4,13 +4,13 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity Mem is
         Port (
-                clk             : in STD_LOGIC;
-                memWrite       : in STD_LOGIC;
-                memRead        : in STD_LOGIC;
-                address         : in STD_LOGIC_VECTOR(15 downto 0);
-                writeData      : in STD_LOGIC_VECTOR(15 downto 0);
-                MemData       : out STD_LOGIC_VECTOR(15 downto 0)
-             );
+                clk       : in  STD_LOGIC;
+                memWrite  : in  STD_LOGIC;
+                memRead   : in  STD_LOGIC;
+                address   : in  STD_LOGIC_VECTOR(15 downto 0);
+                writeData : in  STD_LOGIC_VECTOR(15 downto 0);
+                MemData   : out STD_LOGIC_VECTOR(15 downto 0)
+        );
 end entity Mem;
 
 architecture Behaviour of Mem is
@@ -19,16 +19,16 @@ architecture Behaviour of Mem is
 
         attribute ram_init_file : string;
         attribute ram_init_file of mem_array : signal is "program.mif";
-
 begin
-        process(clk)
+        process (clk)
         begin
                 if rising_edge(clk) then
                         if memWrite = '1' then
                                 mem_array(to_integer(unsigned(address))) <= writeData;
                         end if;
+
                         if memRead = '1' then
-                                memData <= mem_array(to_integer(unsigned(address)));
+                                MemData <= mem_array(to_integer(unsigned(address)));
                         end if;
                 end if;
         end process;
