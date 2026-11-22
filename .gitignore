@@ -8,6 +8,10 @@ work-obj*.cf
 *.ghw
 *.vcd
 *.fst
+!simulations/
+!simulations/datapath.ghw
+!simulations/datapath.svg
+!simulations/datapath.png
 
 # ModelSim / QuestaSim
 work/
@@ -63,3 +67,5 @@ Thumbs.db
 __pycache__/
 *.pyc
 .venv/
+
+vhdl_ls.toml
