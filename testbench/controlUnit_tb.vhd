@@ -74,7 +74,7 @@ begin
                                 wait until rising_edge(clk);
                         end loop;
                         wait for 1 ns;
-                        report "Finished opcode " & to_hstring(op) severity note;
+                        report "Opcode finalizado: " & to_hstring(op) severity note;
                 end procedure;
         begin
                 reset <= '1';
@@ -106,7 +106,7 @@ begin
                 wait for 1 ns;
                 reset <= '0';
 
-                report "Simulation finished" severity note;
+                report "Simulacao finalizada" severity note;
                 finish;
         end process;
 end architecture;

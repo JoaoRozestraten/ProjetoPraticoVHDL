@@ -61,7 +61,7 @@ begin
                                 reset <= '0';
                                 wait for 340 ns;
 
-                                report "Datapath simulation completed using an in-testbench program"
+                report "Simulacao do caminho de dados finalizada com programa interno"
                                                 severity note;
                                 finish;
                 end process;
