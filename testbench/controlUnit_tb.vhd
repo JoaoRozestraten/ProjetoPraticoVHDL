@@ -39,7 +39,6 @@ architecture sim of ControlUnit_tb is
         constant WB_ADDI   : std_logic_vector(3 downto 0) := "0101";
         constant MEM_ADDR  : std_logic_vector(3 downto 0) := "0110";
         constant MEM_READ  : std_logic_vector(3 downto 0) := "0111";
-        constant MEM_LATCH : std_logic_vector(3 downto 0) := "1000";
         constant MEM_WB    : std_logic_vector(3 downto 0) := "1001";
         constant MEM_STORE : std_logic_vector(3 downto 0) := "1010";
         constant BRANCH    : std_logic_vector(3 downto 0) := "1011";
