@@ -68,6 +68,7 @@ begin
         Extshift <= std_logic_vector(shift_left(signed(Extend), 1));
         memory_address <= pc when iord = '0' else alu_out;
         memory_data_out <= b_reg;
+        write_data <= mdr_data when mem_to_reg = '1' else alu_out;
         branch_taken <= pc_write_cond and (zero xor branch_ne);
 
         -- Select the next PC source: ALU result, saved branch target,
@@ -78,7 +79,7 @@ begin
                 when "01" =>
                                 pc_next <= alu_out;
                 when "10" =>
-                                pc_next <= x"0000" & address;
+                                pc_next <= x"0" & address;
                 when others =>
                                 pc_next <= alu_result;
                 end case;
