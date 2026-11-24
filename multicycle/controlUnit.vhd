@@ -59,14 +59,13 @@ architecture rtl of ControlUnit is
         constant OP_JMP  : std_logic_vector(3 downto 0) := "1010";
 begin
         -- State register
-        state_register : process (clk)
+        -- Asynchronous reset, like PC, IR and the register bank.
+        state_register : process (clk, reset)
         begin
-                if rising_edge(clk) then
-                        if reset = '1' then
-                                state <= FETCH;
-                        else
-                                state <= next_state;
-                        end if;
+                if reset = '1' then
+                        state <= FETCH;
+                elsif rising_edge(clk) then
+                        state <= next_state;
                 end if;
         end process state_register;
 
