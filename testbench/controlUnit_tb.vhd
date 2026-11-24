@@ -88,7 +88,7 @@ begin
                 run_instruction("0011", 4); -- OR
                 run_instruction("0100", 4); -- SLT
                 run_instruction("0101", 4); -- ADDI
-                run_instruction("0110", 6); -- LD
+                run_instruction("0110", 5); -- LD
                 run_instruction("0111", 4); -- ST
                 run_instruction("1000", 3); -- BEQ
                 run_instruction("1001", 3); -- BNE

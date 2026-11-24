@@ -20,15 +20,18 @@ architecture Behaviour of Mem is
         attribute ram_init_file : string;
         attribute ram_init_file of mem_array : signal is "program.mif";
 begin
+        -- Single-clock synchronous RAM so Quartus maps it to M9K blocks and
+        -- loads program.mif. On the FPGA, clk is CLOCK_50 (much faster than
+        -- the CPU's manual clock), so read data is ready within one CPU state.
+        -- Only the low 12 address bits are used (4096 words).
         process (clk)
         begin
                 if rising_edge(clk) then
                         if memWrite = '1' then
-                                mem_array(to_integer(unsigned(address))) <= writeData;
+                                mem_array(to_integer(unsigned(address(11 downto 0)))) <= writeData;
                         end if;
-                elsif falling_edge(clk) then
                         if memRead = '1' then
-                                MemData <= mem_array(to_integer(unsigned(address)));
+                                MemData <= mem_array(to_integer(unsigned(address(11 downto 0))));
                         end if;
                 end if;
         end process;
