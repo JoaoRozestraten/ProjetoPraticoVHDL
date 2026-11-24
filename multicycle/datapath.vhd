@@ -11,7 +11,11 @@ entity Datapath is
                 memory_data_out: out std_logic_vector(15 downto 0);
                 memory_read    : out std_logic;
                 memory_write   : out std_logic;
-                state_code     : out std_logic_vector(3 downto 0)
+                state_code     : out std_logic_vector(3 downto 0);
+                -- Values shown on the FPGA displays
+                pc_out         : out std_logic_vector(15 downto 0);
+                mdr_out        : out std_logic_vector(15 downto 0);
+                alu_result_out : out std_logic_vector(15 downto 0)
         );
 end entity Datapath;
 
@@ -62,6 +66,7 @@ architecture rtl of Datapath is
 
         signal zero          : std_logic;
         signal branch_taken  : std_logic;
+        signal pc_enable     : std_logic;
 begin
         -- Immediate and memory-address selection
         Extend <= std_logic_vector(resize(signed(immediate), 16));
@@ -70,6 +75,11 @@ begin
         memory_data_out <= b_reg;
         write_data <= mdr_data when mem_to_reg = '1' else alu_out;
         branch_taken <= pc_write_cond and (zero xor branch_ne);
+        pc_enable <= pc_write or branch_taken;
+
+        pc_out <= pc;
+        mdr_out <= mdr_data;
+        alu_result_out <= alu_result;
 
         -- Select the next PC source: ALU result, saved branch target,
         -- or the zero-extended jump address.
@@ -137,7 +147,7 @@ begin
                         port map (
                                 clk     => clk,
                                 rst     => reset,
-                                PCWrite => pc_write or branch_taken,
+                                PCWrite => pc_enable,
                                 PC_next => pc_next,
                                 PC_out  => pc
                         );
@@ -206,7 +216,8 @@ begin
                                 end if;
 
                                 if b_write = '1' then
-                                        if opcode = "0111" then
+                                        -- ST stores Ri; BEQ/BNE compare Ri with Rj.
+                                        if opcode = "0111" or opcode = "1000" or opcode = "1001" then
                                                 b_reg <= rd_data;
                                         else
                                                 b_reg <= rt_data;
