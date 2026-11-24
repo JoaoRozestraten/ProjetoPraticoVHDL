@@ -325,7 +325,9 @@ Cada `.mif` exercita um grupo de instruções e tem um resultado esperado conhec
 | Integrante | RA |
 |---|---|
 | Daniel Picconi Alquete | 24015408 |
+| Gabriel Lippi Angelini 24005453 |
 | João Guadagnucci Rozestraten | 24005941 |
+| Nathan Gonzalez Jurcevic RA21008388 |
 | Rodrigo Seiji Yugoshi Ushizawa | 24009811 |
 | — | — |
 
