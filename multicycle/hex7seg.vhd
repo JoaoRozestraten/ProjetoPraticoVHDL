@@ -1,12 +1,27 @@
+-- ============================================================================
+-- Projeto Pratico VHDL - CPU multiciclo de 16 bits
+-- Laboratorio de Arquitetura de Sistemas Computacionais (218040P)
+--
+-- Integrantes:
+--   Daniel Picconi Alquete           RA 24015408
+--   Gabriel Lippi Angelini           RA 24005453
+--   Joao Guadagnucci Rozestraten     RA 24005941
+--   Nathan Gonzalez Jurcevic         RA 21008388
+--   Rodrigo Seiji Yugoshi Ushizawa   RA 24009811
+--
+-- Arquivo   : hex7seg.vhd
+-- Descricao : Mostra um valor de 4 bits como digito hexadecimal (0-F) em um
+--             display de sete segmentos. Os segmentos sao ativos em nivel
+--             baixo, como na DE2-115: segments(0) = a ... segments(6) = g.
+-- ============================================================================
+
 library ieee;
 use ieee.std_logic_1164.all;
 
--- Shows a 4-bit value as a hexadecimal digit (0-F) on a seven-segment display.
--- Segments are active-low, as on the DE2-115: segments(0) = a ... segments(6) = g.
 entity hex7seg is
         port (
-                value    : in  std_logic_vector(3 downto 0);
-                segments : out std_logic_vector(6 downto 0)
+                value    : in  std_logic_vector(3 downto 0);  -- Valor a mostrar (0 a F)
+                segments : out std_logic_vector(6 downto 0)   -- Segmentos g..a (ativos em '0')
         );
 end entity hex7seg;
 
@@ -29,5 +44,5 @@ begin
                             "0100001" when "1101", -- d
                             "0000110" when "1110", -- E
                             "0001110" when "1111", -- F
-                            "1111111" when others; -- off
+                            "1111111" when others; -- apagado
 end architecture rtl;

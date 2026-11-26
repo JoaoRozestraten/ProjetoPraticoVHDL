@@ -1,3 +1,19 @@
+-- ============================================================================
+-- Projeto Pratico VHDL - CPU multiciclo de 16 bits
+-- Laboratorio de Arquitetura de Sistemas Computacionais (218040P)
+--
+-- Integrantes:
+--   Daniel Picconi Alquete           RA 24015408
+--   Gabriel Lippi Angelini           RA 24005453
+--   Joao Guadagnucci Rozestraten     RA 24005941
+--   Nathan Gonzalez Jurcevic         RA 21008388
+--   Rodrigo Seiji Yugoshi Ushizawa   RA 24009811
+--
+-- Arquivo   : mem_tb.vhd
+-- Descricao : Testbench da memoria. Escreve 0xABCD no endereco 4 e depois
+--             le o mesmo endereco; o resultado e conferido na forma de onda.
+-- ============================================================================
+
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
@@ -17,6 +33,7 @@ architecture sim of Mem_tb is
                 );
         end component;
 
+        -- Sinais ligados as portas da memoria (ver mem.vhd)
         signal clk      : STD_LOGIC := '0';
         signal memWrite : STD_LOGIC := '0';
         signal memRead  : STD_LOGIC := '0';
@@ -24,9 +41,9 @@ architecture sim of Mem_tb is
         signal writeData: STD_LOGIC_VECTOR(15 downto 0);
         signal MemData  : STD_LOGIC_VECTOR(15 downto 0);
 
-        constant CLK_PERIOD : time := 20 ns;
+        constant CLK_PERIOD : time := 20 ns;  -- Periodo do clock
 
-        signal sim_done : boolean := false;
+        signal sim_done : boolean := false;   -- Para o clock no fim do teste
 begin
         uut: Mem
                 port map(
@@ -46,7 +63,7 @@ begin
                 clk <= '1';
                 wait for CLK_PERIOD / 2;
                 end loop;
-                wait; -- Stops the process completely when done
+                wait; -- Para o processo de vez quando o teste termina
         end process;
 
         stim_process : process

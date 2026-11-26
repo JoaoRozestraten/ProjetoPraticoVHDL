@@ -1,29 +1,45 @@
+-- ============================================================================
+-- Projeto Pratico VHDL - CPU multiciclo de 16 bits
+-- Laboratorio de Arquitetura de Sistemas Computacionais (218040P)
+--
+-- Integrantes:
+--   Daniel Picconi Alquete           RA 24015408
+--   Gabriel Lippi Angelini           RA 24005453
+--   Joao Guadagnucci Rozestraten     RA 24005941
+--   Nathan Gonzalez Jurcevic         RA 21008388
+--   Rodrigo Seiji Yugoshi Ushizawa   RA 24009811
+--
+-- Arquivo   : mem.vhd
+-- Descricao : Memoria unificada (instrucoes e dados) de 4096 palavras de
+--             16 bits, inicializada pelo arquivo program.mif.
+-- ============================================================================
+
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
 entity Mem is
         Port (
-                clk       : in  STD_LOGIC;
-                memWrite  : in  STD_LOGIC;
-                memRead   : in  STD_LOGIC;
-                address   : in  STD_LOGIC_VECTOR(15 downto 0);
-                writeData : in  STD_LOGIC_VECTOR(15 downto 0);
-                MemData   : out STD_LOGIC_VECTOR(15 downto 0)
+                clk       : in  STD_LOGIC;                      -- Clock da memoria (CLOCK_50 na FPGA)
+                memWrite  : in  STD_LOGIC;                      -- Sinal da UC (habilita escrita)
+                memRead   : in  STD_LOGIC;                      -- Sinal da UC (habilita leitura)
+                address   : in  STD_LOGIC_VECTOR(15 downto 0);  -- Endereco (PC ou ALUOut, via IorD)
+                writeData : in  STD_LOGIC_VECTOR(15 downto 0);  -- Dado a escrever (registrador B)
+                MemData   : out STD_LOGIC_VECTOR(15 downto 0)   -- Palavra lida
         );
 end entity Mem;
 
 architecture Behaviour of Mem is
         type ram_type is array (0 to 4095) of std_logic_vector(15 downto 0);
-        signal mem_array : ram_type;
+        signal mem_array : ram_type;  -- Conteudo da memoria
 
         attribute ram_init_file : string;
         attribute ram_init_file of mem_array : signal is "program.mif";
 begin
-        -- Single-clock synchronous RAM so Quartus maps it to M9K blocks and
-        -- loads program.mif. On the FPGA, clk is CLOCK_50 (much faster than
-        -- the CPU's manual clock), so read data is ready within one CPU state.
-        -- Only the low 12 address bits are used (4096 words).
+        -- RAM sincrona de clock unico, para o Quartus mapear em blocos M9K e
+        -- carregar o program.mif. Na FPGA, clk e o CLOCK_50 (muito mais rapido
+        -- que o clock manual da CPU), entao o dado lido fica pronto dentro de
+        -- um estado da CPU. So os 12 bits baixos do endereco sao usados (4096 palavras).
         process (clk)
         begin
                 if rising_edge(clk) then
