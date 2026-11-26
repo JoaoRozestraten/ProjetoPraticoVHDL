@@ -1,33 +1,54 @@
+-- ============================================================================
+-- Projeto Pratico VHDL - CPU multiciclo de 16 bits
+-- Laboratorio de Arquitetura de Sistemas Computacionais (218040P)
+--
+-- Integrantes:
+--   Daniel Picconi Alquete           RA 24015408
+--   Gabriel Lippi Angelini           RA 24005453
+--   Joao Guadagnucci Rozestraten     RA 24005941
+--   Nathan Gonzalez Jurcevic         RA 21008388
+--   Rodrigo Seiji Yugoshi Ushizawa   RA 24009811
+--
+-- Arquivo   : controlUnit.vhd
+-- Descricao : Unidade de controle (UC) multiciclo. Maquina de estados que,
+--             a partir do opcode, gera os sinais de controle do caminho de
+--             dados. Codigos de estado (StateCode, mostrados nos LEDs verdes):
+--             0000 FETCH     0001 DECODE    0010 EXEC_R    0011 WB_R
+--             0100 EXEC_ADDI 0101 WB_ADDI   0110 MEM_ADDR  0111 MEM_READ
+--             1001 MEM_WB    1010 MEM_STORE 1011 BRANCH    1100 JUMP
+-- ============================================================================
+
 library ieee;
 use ieee.std_logic_1164.all;
 
 entity ControlUnit is
         port (
-                clk          : in  std_logic;
-                reset        : in  std_logic;
-                opcode       : in  std_logic_vector(3 downto 0);
-                PCWrite      : out std_logic;
-                PCWriteCond  : out std_logic;
-                BranchNE     : out std_logic;
-                PCSource     : out std_logic_vector(1 downto 0);
-                IorD         : out std_logic;
-                MemRead      : out std_logic;
-                MemWrite     : out std_logic;
-                IRWrite      : out std_logic;
-                MDRWrite     : out std_logic;
-                AWrite       : out std_logic;
-                BWrite       : out std_logic;
-                ALUOutWrite  : out std_logic;
-                RegWrite     : out std_logic;
-                MemtoReg     : out std_logic;
-                ALUSrcA      : out std_logic;
-                ALUSrcB      : out std_logic_vector(1 downto 0);
-                ALUControl   : out std_logic_vector(2 downto 0);
-                StateCode    : out std_logic_vector(3 downto 0)
+                clk          : in  std_logic;                     -- Clock da CPU
+                reset        : in  std_logic;                     -- Reset assincrono (volta para FETCH)
+                opcode       : in  std_logic_vector(3 downto 0);  -- Opcode vindo do IR
+                PCWrite      : out std_logic;                     -- Escreve o PC incondicionalmente
+                PCWriteCond  : out std_logic;                     -- Escreve o PC se o desvio for tomado
+                BranchNE     : out std_logic;                     -- '1' no BNE (desvia quando zero = '0')
+                PCSource     : out std_logic_vector(1 downto 0);  -- Proximo PC: 00 ULA, 01 ALUOut, 10 endereco do JMP
+                IorD         : out std_logic;                     -- Endereco da memoria: 0 PC, 1 ALUOut
+                MemRead      : out std_logic;                     -- Habilita leitura da memoria
+                MemWrite     : out std_logic;                     -- Habilita escrita na memoria
+                IRWrite      : out std_logic;                     -- Habilita escrita no IR
+                MDRWrite     : out std_logic;                     -- Habilita escrita no MDR
+                AWrite       : out std_logic;                     -- Habilita escrita no registrador A
+                BWrite       : out std_logic;                     -- Habilita escrita no registrador B
+                ALUOutWrite  : out std_logic;                     -- Habilita escrita no ALUOut
+                RegWrite     : out std_logic;                     -- Habilita escrita no banco de registradores
+                MemtoReg     : out std_logic;                     -- Dado escrito no banco: 0 ALUOut, 1 MDR
+                ALUSrcA      : out std_logic;                     -- Operando A da ULA: 0 PC, 1 registrador A
+                ALUSrcB      : out std_logic_vector(1 downto 0);  -- Operando B da ULA: 00 B, 01 constante 1, 10 imediato estendido
+                ALUControl   : out std_logic_vector(2 downto 0);  -- Operacao da ULA (ver ula.vhd)
+                StateCode    : out std_logic_vector(3 downto 0)   -- Codigo do estado atual (LEDs)
         );
 end entity ControlUnit;
 
 architecture rtl of ControlUnit is
+        -- Estados da maquina de estados
         type state_t is (
                 FETCH,
                 DECODE,
@@ -43,9 +64,10 @@ architecture rtl of ControlUnit is
                 JUMP
         );
 
-        signal state      : state_t := FETCH;
-        signal next_state : state_t := FETCH;
+        signal state      : state_t := FETCH;  -- Estado atual
+        signal next_state : state_t := FETCH;  -- Proximo estado
 
+        -- Opcodes das 11 instrucoes
         constant OP_ADD  : std_logic_vector(3 downto 0) := "0000";
         constant OP_SUB  : std_logic_vector(3 downto 0) := "0001";
         constant OP_AND  : std_logic_vector(3 downto 0) := "0010";
@@ -58,8 +80,8 @@ architecture rtl of ControlUnit is
         constant OP_BNE  : std_logic_vector(3 downto 0) := "1001";
         constant OP_JMP  : std_logic_vector(3 downto 0) := "1010";
 begin
-        -- State register
-        -- Asynchronous reset, like PC, IR and the register bank.
+        -- Registrador de estado
+        -- Reset assincrono, como no PC, no IR e no banco de registradores.
         state_register : process (clk, reset)
         begin
                 if reset = '1' then
@@ -69,7 +91,8 @@ begin
                 end if;
         end process state_register;
 
-        -- Next-state logic. Memory addresses are calculated during DECODE.
+        -- Logica de proximo estado. No DECODE a ULA ja calcula PC + imediato
+        -- (alvo do desvio), que fica guardado no ALUOut.
         next_state_logic : process (state, opcode)
         begin
                 next_state <= FETCH;
@@ -118,7 +141,7 @@ begin
                 end case;
         end process next_state_logic;
 
-        -- Output logic
+        -- Logica de saida
         output_logic : process (state, opcode)
         begin
                 PCWrite     <= '0';
@@ -146,12 +169,12 @@ begin
                                 IRWrite   <= '1';
                                 PCWrite   <= '1';
                                 ALUSrcA   <= '0'; -- PC
-                                ALUSrcB   <= "01"; -- constant 1
+                                ALUSrcB   <= "01"; -- constante 1
 
                         when DECODE =>
                                 AWrite      <= '1';
                                 BWrite      <= '1';
-                                ALUSrcB     <= "10"; -- Extend
+                                ALUSrcB     <= "10"; -- imediato estendido
                                 ALUOutWrite <= '1';
                                 StateCode   <= "0001";
 
@@ -168,7 +191,7 @@ begin
 
                         when EXEC_ADDI =>
                                 ALUSrcA     <= '1'; -- A
-                                ALUSrcB     <= "10"; -- Extend
+                                ALUSrcB     <= "10"; -- imediato estendido
                                 ALUOutWrite <= '1';
                                 StateCode   <= "0100";
 
@@ -178,7 +201,7 @@ begin
 
                         when MEM_ADDR =>
                                 ALUSrcA     <= '1'; -- A
-                                ALUSrcB     <= "10"; -- Extend
+                                ALUSrcB     <= "10"; -- imediato estendido
                                 ALUOutWrite <= '1';
                                 StateCode   <= "0110";
 
@@ -212,10 +235,11 @@ begin
 
                         when JUMP =>
                                 PCWrite   <= '1';
-                                PCSource  <= "10";
+                                PCSource  <= "10"; -- endereco do JMP
                                 StateCode <= "1100";
                 end case;
 
+                -- No EXEC_R a operacao da ULA depende do opcode
                 if state = EXEC_R then
                         case opcode is
                                 when OP_SUB =>

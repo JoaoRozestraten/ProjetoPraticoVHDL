@@ -1,33 +1,51 @@
+-- ============================================================================
+-- Projeto Pratico VHDL - CPU multiciclo de 16 bits
+-- Laboratorio de Arquitetura de Sistemas Computacionais (218040P)
+--
+-- Integrantes:
+--   Daniel Picconi Alquete           RA 24015408
+--   Gabriel Lippi Angelini           RA 24005453
+--   Joao Guadagnucci Rozestraten     RA 24005941
+--   Nathan Gonzalez Jurcevic         RA 21008388
+--   Rodrigo Seiji Yugoshi Ushizawa   RA 24009811
+--
+-- Arquivo   : datapath.vhd
+-- Descricao : Caminho de dados da CPU multiciclo. Liga a unidade de controle,
+--             o PC, o IR, o banco de registradores, a ULA, o MDR e os
+--             registradores internos A, B e ALUOut. A memoria fica fora
+--             (em cpu_top.vhd ou no testbench).
+-- ============================================================================
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity Datapath is
         port (
-                clk            : in  std_logic;
-                reset          : in  std_logic;
-                memory_data_in : in  std_logic_vector(15 downto 0);
-                memory_address : out std_logic_vector(15 downto 0);
-                memory_data_out: out std_logic_vector(15 downto 0);
-                memory_read    : out std_logic;
-                memory_write   : out std_logic;
-                state_code     : out std_logic_vector(3 downto 0);
-                -- Values shown on the FPGA displays
-                pc_out         : out std_logic_vector(15 downto 0);
-                mdr_out        : out std_logic_vector(15 downto 0);
-                alu_result_out : out std_logic_vector(15 downto 0)
+                clk            : in  std_logic;                      -- Clock da CPU
+                reset          : in  std_logic;                      -- Reset assincrono
+                memory_data_in : in  std_logic_vector(15 downto 0);  -- Palavra lida da memoria
+                memory_address : out std_logic_vector(15 downto 0);  -- Endereco da memoria (PC ou ALUOut)
+                memory_data_out: out std_logic_vector(15 downto 0);  -- Dado a escrever na memoria (B)
+                memory_read    : out std_logic;                      -- Habilita leitura da memoria
+                memory_write   : out std_logic;                      -- Habilita escrita na memoria
+                state_code     : out std_logic_vector(3 downto 0);   -- Codigo do estado da UC
+                -- Valores mostrados nos displays da FPGA
+                pc_out         : out std_logic_vector(15 downto 0);  -- PC atual
+                mdr_out        : out std_logic_vector(15 downto 0);  -- Conteudo do MDR (RDM)
+                alu_result_out : out std_logic_vector(15 downto 0)   -- Saida da ULA
         );
 end entity Datapath;
 
 architecture rtl of Datapath is
-        -- Main datapath values
+        -- Valores principais do caminho de dados
         signal pc            : std_logic_vector(15 downto 0);
         signal pc_next       : std_logic_vector(15 downto 0);
         signal alu_result    : std_logic_vector(15 downto 0);
         signal alu_out       : std_logic_vector(15 downto 0);
         signal mdr_data      : std_logic_vector(15 downto 0);
 
-        -- ALU inputs and register-bank data
+        -- Entradas da ULA e dados do banco de registradores
         signal alu_input_a   : std_logic_vector(15 downto 0);
         signal alu_input_b   : std_logic_vector(15 downto 0);
         signal a_reg         : std_logic_vector(15 downto 0);
@@ -37,17 +55,17 @@ architecture rtl of Datapath is
         signal rd_data       : std_logic_vector(15 downto 0);
         signal write_data    : std_logic_vector(15 downto 0);
 
-        -- Instruction fields
+        -- Campos da instrucao
         signal opcode        : std_logic_vector(3 downto 0);
         signal rd            : std_logic_vector(2 downto 0);
         signal rs            : std_logic_vector(2 downto 0);
         signal rt            : std_logic_vector(2 downto 0);
         signal immediate     : std_logic_vector(5 downto 0);
         signal address       : std_logic_vector(11 downto 0);
-        signal Extend        : std_logic_vector(15 downto 0);
-        signal Extshift      : std_logic_vector(15 downto 0);
+        signal Extend        : std_logic_vector(15 downto 0);  -- Imediato com extensao de sinal
+        signal Extshift      : std_logic_vector(15 downto 0);  -- Imediato estendido deslocado 1 bit
 
-        -- Control signals
+        -- Sinais de controle
         signal pc_write      : std_logic;
         signal pc_write_cond : std_logic;
         signal branch_ne     : std_logic;
@@ -64,11 +82,11 @@ architecture rtl of Datapath is
         signal pc_source     : std_logic_vector(1 downto 0);
         signal alu_control   : std_logic_vector(2 downto 0);
 
-        signal zero          : std_logic;
-        signal branch_taken  : std_logic;
-        signal pc_enable     : std_logic;
+        signal zero          : std_logic;  -- Flag de zero da ULA
+        signal branch_taken  : std_logic;  -- '1' quando o desvio e tomado
+        signal pc_enable     : std_logic;  -- Habilita escrita no PC
 begin
-        -- Immediate and memory-address selection
+        -- Selecao do imediato e do endereco da memoria
         Extend <= std_logic_vector(resize(signed(immediate), 16));
         Extshift <= std_logic_vector(shift_left(signed(Extend), 1));
         memory_address <= pc when iord = '0' else alu_out;
@@ -81,8 +99,8 @@ begin
         mdr_out <= mdr_data;
         alu_result_out <= alu_result;
 
-        -- Select the next PC source: ALU result, saved branch target,
-        -- or the zero-extended jump address.
+        -- Seleciona a origem do proximo PC: resultado da ULA, alvo do desvio
+        -- guardado no ALUOut ou o endereco do salto estendido com zeros.
         process (pc_source, alu_result, alu_out, address)
         begin
                 case pc_source is
@@ -95,7 +113,7 @@ begin
                 end case;
         end process;
 
-                -- Select the two operands presented to the ULA.
+                -- Seleciona os dois operandos apresentados a ULA.
         process (alu_src_a, alu_src_b, pc, a_reg, b_reg, Extend)
                 variable left_operand  : std_logic_vector(15 downto 0);
                 variable right_operand : std_logic_vector(15 downto 0);
@@ -116,7 +134,7 @@ begin
                         alu_input_b <= right_operand;
                 end process;
 
-                -- Control unit
+                -- Unidade de controle
                 u_control : entity work.ControlUnit
                         port map (
                                 clk          => clk,
@@ -142,7 +160,7 @@ begin
                                 StateCode    => state_code
                         );
 
-                -- Program counter
+                -- Contador de programa
                 u_pc : entity work.pc
                         port map (
                                 clk     => clk,
@@ -152,7 +170,7 @@ begin
                                 PC_out  => pc
                         );
 
-                -- Instruction register and field decoder
+                -- Registrador de instrucao e separacao dos campos
                 u_ir : entity work.IR
                         port map (
                                 clk       => clk,
@@ -167,7 +185,7 @@ begin
                                 endereco  => address
                         );
 
-                -- Register bank. The third read port supplies store data (Ri).
+                -- Banco de registradores. A terceira porta de leitura fornece o dado do ST (Ri).
                 u_regs : entity work.BancoRegistradores
                         port map (
                                 clk        => clk,
@@ -183,7 +201,7 @@ begin
                                 rd_data    => rd_data
                         );
 
-                -- Arithmetic and logic unit
+                -- Unidade logica e aritmetica
                 u_ula : entity work.ula
                         port map (
                                 A           => alu_input_a,
@@ -193,7 +211,7 @@ begin
                                 zero        => zero
                         );
 
-                -- Memory data register
+                -- Registrador de dados da memoria
                 u_mdr : entity work.mdr
                         port map (
                                 clk      => clk,
@@ -203,7 +221,7 @@ begin
                                 data_out => mdr_data
                         );
 
-                -- Internal multicycle registers: A, B, and ALUOut.
+                -- Registradores internos do multiciclo: A, B e ALUOut.
                 process (clk, reset)
                 begin
                         if reset = '1' then
@@ -216,7 +234,7 @@ begin
                                 end if;
 
                                 if b_write = '1' then
-                                        -- ST stores Ri; BEQ/BNE compare Ri with Rj.
+                                        -- ST grava Ri; BEQ/BNE comparam Ri com Rj.
                                         if opcode = "0111" or opcode = "1000" or opcode = "1001" then
                                                 b_reg <= rd_data;
                                         else

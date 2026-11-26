@@ -1,35 +1,51 @@
+-- ============================================================================
+-- Projeto Pratico VHDL - CPU multiciclo de 16 bits
+-- Laboratorio de Arquitetura de Sistemas Computacionais (218040P)
+--
+-- Integrantes:
+--   Daniel Picconi Alquete           RA 24015408
+--   Gabriel Lippi Angelini           RA 24005453
+--   Joao Guadagnucci Rozestraten     RA 24005941
+--   Nathan Gonzalez Jurcevic         RA 21008388
+--   Rodrigo Seiji Yugoshi Ushizawa   RA 24009811
+--
+-- Arquivo   : cpu_top.vhd
+-- Descricao : Entidade de topo para a placa DE2-115. Os nomes das portas
+--             seguem o arquivo de pinos da Terasic (DE2_115_pin_assignments.csv).
+--               KEY0    : clock manual da CPU (cada aperto = um pulso, com debouncer)
+--               KEY1    : reset (segurado = reset)
+--               HEX0-3  : PC
+--               HEX4-7  : saida da ULA com SW17 = '1', registrador de dados da
+--                         memoria (RDM) com SW17 = '0'
+--               LEDG3-0 : codigo do estado da UC (ver StateCode em controlUnit.vhd)
+--               LEDG8   : aceso enquanto o botao de clock esta apertado
+-- ============================================================================
+
 library ieee;
 use ieee.std_logic_1164.all;
 
--- Top-level entity for the DE2-115 board.
--- Port names follow the Terasic pin assignment file (DE2_115_pin_assignments.csv).
---   KEY0     : manual CPU clock (one press = one clock pulse, debounced)
---   KEY1     : reset (held = reset)
---   HEX0-3   : PC
---   HEX4-7   : ALU output when SW17 = '1', memory data register (RDM) when SW17 = '0'
---   LEDG3-0  : control unit state code (see StateCode in controlUnit.vhd)
---   LEDG8    : on while the clock button is pressed
 entity cpu_top is
         port (
-                CLOCK_50 : in  std_logic;
-                KEY      : in  std_logic_vector(3 downto 0);
-                SW       : in  std_logic_vector(17 downto 0);
-                HEX0     : out std_logic_vector(6 downto 0);
-                HEX1     : out std_logic_vector(6 downto 0);
-                HEX2     : out std_logic_vector(6 downto 0);
-                HEX3     : out std_logic_vector(6 downto 0);
-                HEX4     : out std_logic_vector(6 downto 0);
-                HEX5     : out std_logic_vector(6 downto 0);
-                HEX6     : out std_logic_vector(6 downto 0);
-                HEX7     : out std_logic_vector(6 downto 0);
-                LEDG     : out std_logic_vector(8 downto 0)
+                CLOCK_50 : in  std_logic;                      -- Clock de 50 MHz da placa
+                KEY      : in  std_logic_vector(3 downto 0);   -- Botoes (ativos em '0')
+                SW       : in  std_logic_vector(17 downto 0);  -- Chaves (so SW17 e usada)
+                HEX0     : out std_logic_vector(6 downto 0);   -- PC, digito 0
+                HEX1     : out std_logic_vector(6 downto 0);   -- PC, digito 1
+                HEX2     : out std_logic_vector(6 downto 0);   -- PC, digito 2
+                HEX3     : out std_logic_vector(6 downto 0);   -- PC, digito 3
+                HEX4     : out std_logic_vector(6 downto 0);   -- ULA/RDM, digito 0
+                HEX5     : out std_logic_vector(6 downto 0);   -- ULA/RDM, digito 1
+                HEX6     : out std_logic_vector(6 downto 0);   -- ULA/RDM, digito 2
+                HEX7     : out std_logic_vector(6 downto 0);   -- ULA/RDM, digito 3
+                LEDG     : out std_logic_vector(8 downto 0)    -- LEDs verdes (estado e clock)
         );
 end entity cpu_top;
 
 architecture rtl of cpu_top is
-        signal cpu_clk         : std_logic;
-        signal reset           : std_logic;
+        signal cpu_clk         : std_logic;                      -- Clock manual (saida do debouncer)
+        signal reset           : std_logic;                      -- Reset ativo em '1'
 
+        -- Ligacao entre a CPU e a memoria
         signal memory_data_in  : std_logic_vector(15 downto 0);
         signal memory_address  : std_logic_vector(15 downto 0);
         signal memory_data_out : std_logic_vector(15 downto 0);
@@ -37,10 +53,11 @@ architecture rtl of cpu_top is
         signal memory_write    : std_logic;
         signal state_code      : std_logic_vector(3 downto 0);
 
+        -- Valores mostrados nos displays
         signal pc              : std_logic_vector(15 downto 0);
         signal mdr             : std_logic_vector(15 downto 0);
         signal alu_result      : std_logic_vector(15 downto 0);
-        signal upper_display   : std_logic_vector(15 downto 0);
+        signal upper_display   : std_logic_vector(15 downto 0);  -- ULA ou RDM, conforme SW17
 begin
         reset <= not KEY(1);
 
@@ -66,8 +83,8 @@ begin
                         alu_result_out  => alu_result
                 );
 
-        -- The memory runs on CLOCK_50 so its output is ready long before
-        -- the next manual clock pulse (see mem.vhd).
+        -- A memoria roda no CLOCK_50, entao sua saida fica pronta bem antes
+        -- do proximo pulso do clock manual (ver mem.vhd).
         u_mem : entity work.Mem
                 port map (
                         clk       => CLOCK_50,

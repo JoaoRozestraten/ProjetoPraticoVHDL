@@ -1,3 +1,21 @@
+-- ============================================================================
+-- Projeto Pratico VHDL - CPU multiciclo de 16 bits
+-- Laboratorio de Arquitetura de Sistemas Computacionais (218040P)
+--
+-- Integrantes:
+--   Daniel Picconi Alquete           RA 24015408
+--   Gabriel Lippi Angelini           RA 24005453
+--   Joao Guadagnucci Rozestraten     RA 24005941
+--   Nathan Gonzalez Jurcevic         RA 21008388
+--   Rodrigo Seiji Yugoshi Ushizawa   RA 24009811
+--
+-- Arquivo   : datapath_tb.vhd
+-- Descricao : Testbench do caminho de dados completo. Roda um programa que
+--             usa as 11 instrucoes (incluindo desvios tomados, nao tomados e
+--             para tras), grava os resultados na memoria e no fim confere
+--             cada endereco, contando as falhas.
+-- ============================================================================
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -8,6 +26,8 @@ end entity datapath_tb;
 
 architecture sim of datapath_tb is
                 type memory_type is array (0 to 4095) of std_logic_vector(15 downto 0);
+
+                -- Programa de teste (os comentarios mostram a instrucao e o resultado esperado)
 
                 constant test_program : memory_type := (
                                 0  => x"5205", -- ADDI R1, R0, 5
@@ -24,31 +44,32 @@ architecture sim of datapath_tb is
                                 11 => x"7E18", -- SW   R7, 24(R0)
                                 12 => x"6214", -- LW   R1, 20(R0)
                                 13 => x"7219", -- SW   R1, 25(R0)
-                                -- Addresses 20..32 hold data, so the rest of the code starts at 50.
+                                -- Os enderecos 20..32 guardam dados, entao o resto do codigo comeca no 50.
                                 14 => x"A032", -- JMP  50
-                                -- Branch target = PC + 1 + imm (PC already incremented in FETCH).
-                                50 => x"82C2", -- BEQ  R1, R3, +2: 12 = 12, taken, skip 51 and 52
-                                51 => x"761A", -- skipped SW R3, 26(R0)
-                                52 => x"761B", -- skipped SW R3, 27(R0)
-                                53 => x"9541", -- BNE  R2, R5, +1: 7 /= 5, taken, skip 54
-                                54 => x"761C", -- skipped SW R3, 28(R0)
-                                55 => x"9C81", -- BNE  R6, R2, +1: 7 = 7, not taken
+                                -- Alvo do desvio = PC + 1 + imm (o PC ja foi incrementado no FETCH).
+                                50 => x"82C2", -- BEQ  R1, R3, +2: 12 = 12, tomado, pula 51 e 52
+                                51 => x"761A", -- pulada: SW R3, 26(R0)
+                                52 => x"761B", -- pulada: SW R3, 27(R0)
+                                53 => x"9541", -- BNE  R2, R5, +1: 7 /= 5, tomado, pula 54
+                                54 => x"761C", -- pulada: SW R3, 28(R0)
+                                55 => x"9C81", -- BNE  R6, R2, +1: 7 = 7, nao tomado
                                 56 => x"741D", -- SW   R2, 29(R0) = 7
-                                57 => x"8941", -- BEQ  R4, R5, +1: 2 /= 5, not taken
+                                57 => x"8941", -- BEQ  R4, R5, +1: 2 /= 5, nao tomado
                                 58 => x"781E", -- SW   R4, 30(R0) = 2
-                                59 => x"A046", -- JMP  70: skip 60..69
-                                60 => x"761C", -- skipped SW R3, 28(R0)
+                                59 => x"A046", -- JMP  70: pula 60..69
+                                60 => x"761C", -- pulada: SW R3, 28(R0)
                                 70 => x"761F", -- SW   R3, 31(R0)
-                                -- Backward branch (negative immediate): count R2 from 0 to 3.
+                                -- Desvio para tras (imediato negativo): conta R2 de 0 a 3.
                                 71 => x"5C03", -- ADDI R6, R0, 3
                                 72 => x"5400", -- ADDI R2, R0, 0
                                 73 => x"5481", -- ADDI R2, R2, 1
-                                74 => x"95BE", -- BNE  R2, R6, -2: back to 73 while R2 /= 3
-                                75 => x"7413", -- SW   R2, 19(R0) = 3 (imm range is -32..31)
-                                76 => x"A04C", -- JMP  76: stop here
+                                74 => x"95BE", -- BNE  R2, R6, -2: volta para 73 enquanto R2 /= 3
+                                75 => x"7413", -- SW   R2, 19(R0) = 3 (o imediato vai de -32 a 31)
+                                76 => x"A04C", -- JMP  76: para aqui
                                 others => x"0000"
                 );
 
+                -- Sinais ligados as portas do Datapath (ver datapath.vhd)
                 signal clk             : std_logic := '0';
                 signal reset           : std_logic := '1';
                 signal memory_data_in  : std_logic_vector(15 downto 0);
@@ -57,15 +78,17 @@ architecture sim of datapath_tb is
                 signal memory_read     : std_logic;
                 signal memory_write    : std_logic;
                 signal state_code      : std_logic_vector(3 downto 0);
-                signal test_memory     : memory_type := test_program;
+                signal test_memory     : memory_type := test_program;  -- Memoria simulada
 begin
                 clk <= not clk after 5 ns;
 
+                -- Leitura combinacional da memoria simulada
                 process (memory_address, test_memory)
                 begin
                                 memory_data_in <= test_memory(to_integer(unsigned(memory_address)));
                 end process;
 
+                -- Escrita sincrona na memoria simulada
                 process (clk)
                 begin
                                 if rising_edge(clk) and memory_write = '1' then
@@ -85,8 +108,9 @@ begin
                                                 state_code      => state_code
                                 );
 
+                -- Solta o reset, espera o programa terminar e confere a memoria
                 process
-                                variable falhas : natural := 0;
+                                variable falhas : natural := 0;  -- Numero de testes que falharam
                 begin
                                 wait for 12 ns;
                                 reset <= '0';

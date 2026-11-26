@@ -1,3 +1,21 @@
+-- ============================================================================
+-- Projeto Pratico VHDL - CPU multiciclo de 16 bits
+-- Laboratorio de Arquitetura de Sistemas Computacionais (218040P)
+--
+-- Integrantes:
+--   Daniel Picconi Alquete           RA 24015408
+--   Gabriel Lippi Angelini           RA 24005453
+--   Joao Guadagnucci Rozestraten     RA 24005941
+--   Nathan Gonzalez Jurcevic         RA 21008388
+--   Rodrigo Seiji Yugoshi Ushizawa   RA 24009811
+--
+-- Arquivo   : controlUnit_tb.vhd
+-- Descricao : Testbench da unidade de controle. Passa as 11 instrucoes, uma
+--             de cada vez, esperando o numero de ciclos de cada uma, e no fim
+--             aplica reset no meio de um LD para conferir a volta ao FETCH
+--             na forma de onda.
+-- ============================================================================
+
 library ieee;
 use ieee.std_logic_1164.all;
 use std.env.all;
@@ -6,7 +24,8 @@ entity ControlUnit_tb is
 end entity;
 
 architecture sim of ControlUnit_tb is
-        constant CLK_PERIOD : time := 10 ns;
+        constant CLK_PERIOD : time := 10 ns;                                   -- Periodo do clock
+        -- Sinais ligados as portas da ControlUnit (ver controlUnit.vhd)
         signal clk         : std_logic := '0';
         signal reset       : std_logic := '0';
         signal opcode      : std_logic_vector(3 downto 0) := (others => '0');
@@ -30,7 +49,7 @@ architecture sim of ControlUnit_tb is
         signal StateCode   : std_logic_vector(3 downto 0);
 
         type state_sequence is array (natural range <>) of std_logic_vector(3 downto 0);
-        -- States must match ControlUnit.vhd:
+        -- Codigos de estado, iguais aos do StateCode em controlUnit.vhd:
         constant FETCH     : std_logic_vector(3 downto 0) := "0000";
         constant DECODE    : std_logic_vector(3 downto 0) := "0001";
         constant EXEC_R    : std_logic_vector(3 downto 0) := "0010";
@@ -65,10 +84,10 @@ begin
                         constant cycles : in positive
                 ) is
                 begin
-                        -- Begin an instruction when the control unit is in FETCH.
+                        -- Comeca uma instrucao com a unidade de controle no FETCH.
                         wait until falling_edge(clk);
                         opcode <= op;
-                        -- DECODE and all subsequent execution stages, returning to FETCH.
+                        -- DECODE e todos os estados de execucao seguintes, ate voltar ao FETCH.
                         for i in 1 to cycles loop
                                 wait until rising_edge(clk);
                         end loop;
@@ -81,7 +100,7 @@ begin
                 wait for 1 ns;
                 reset <= '0';
 
-                -- cycles counts edges from FETCH until returning to FETCH.
+                -- cycles conta as bordas desde o FETCH ate voltar ao FETCH.
                 run_instruction("0000", 4); -- ADD
                 run_instruction("0001", 4); -- SUB
                 run_instruction("0010", 4); -- AND
@@ -94,7 +113,7 @@ begin
                 run_instruction("1001", 3); -- BNE
                 run_instruction("1010", 3); -- JMP
 
-                -- Verify reset visually in the waveform from an execution state.
+                -- Conferir o reset visualmente na forma de onda, a partir de um estado de execucao.
                 wait until falling_edge(clk);
                 opcode <= "0110";
                 wait until rising_edge(clk); -- DECODE
